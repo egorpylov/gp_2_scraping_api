@@ -1,1 +1,1 @@
-# gp_2_scraping_api
+Групповой проект №: Scraping & API
