@@ -5,7 +5,6 @@ pycache/
 venv/
 env/
 .env
-.env.*
 config.py
 secrets.py
 *.log
