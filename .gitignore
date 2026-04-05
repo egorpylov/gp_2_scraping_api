@@ -11,3 +11,4 @@ secrets.py
 *.log
 .DS_Store
 Thumbs.db
+warning: in the working copy of 'GP_2_Scraping_&_API.ipynb', LF will be replaced by CRLF the next time Git touches it
