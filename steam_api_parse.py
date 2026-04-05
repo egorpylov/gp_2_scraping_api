@@ -7,7 +7,7 @@ import os
 from loguru import logger
 
 load_dotenv()  
-logger.add(".log")
+logger.add(".log/{time}.log")
 
 
 
