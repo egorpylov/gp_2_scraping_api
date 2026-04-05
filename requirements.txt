@@ -1,4 +1,5 @@
 pandas
 plotly
 python-dotenv
-loguru 
+loguru
+requests
