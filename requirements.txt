@@ -2,3 +2,6 @@ pandas
 plotly
 python-dotenv
 loguru 
+httpx
+requests
+more-itertools
