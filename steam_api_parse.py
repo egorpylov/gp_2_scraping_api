@@ -21,19 +21,16 @@ def get_next_dataset(params):
 
 @logger.catch
 async def fetch_steam_pub_api(client, urls):
-  data = list()  
+  data = dict()  
   
   for url in urls:
     response = await client.get(url)
-    logger.warning(response.text)
-    data += response.json()
+    data |= response.json()
     await asyncio.sleep(1)
 
   return data  
 
-@logger.catch
-def generate_clients(proxies):
-  return list(map(lambda p: httpx.AsyncClient(proxy=p), proxies))
+
 
 # urls is a list of url lists generated for each client
 @logger.catch
@@ -48,15 +45,22 @@ async def fetch_pub_steam_full(clients, urls, list_params=None):
 
 @logger.catch
 async def fetch_all_pub_steam_sources(appids):
-  clients = generate_clients(config.PROXIES)
+  clients = list(map(lambda p: httpx.AsyncClient(proxy=p), config.PROXIES))
   splitted_ids = pd.DataFrame(np.array_split(appids, len(config.PROXIES)))
-  first_ulr_list = splitted_ids.map(lambda x: config.app_details_url.format(appid=x))
+
+  app_details_url_list = splitted_ids.map(lambda x: config.app_details_url.format(appid=x))
+
+  app_reviews_url_list = splitted_ids.map(lambda x: config.reviews_url.format(appid=x))
+  app_current_online_url_list = splitted_ids.map(lambda x: config.current_online_url.format(appid=x))
+
+  details_data = await fetch_pub_steam_full(clients, app_details_url_list)
+  reviews_data = await fetch_pub_steam_full(clients, app_reviews_url_list)
+  current_online_data = await fetch_pub_steam_full(clients, app_current_online_url_list)
+
+  logger.warning(pd.DataFrame(details_data).shape)
 
 
-  first_data = await fetch_pub_steam_full(clients, first_ulr_list)
-  logger.warning(pd.DataFrame(first_data).shape)
-  return first_data
-
+  return (details_data, reviews_data, current_online_data)
 
 
 @logger.catch
@@ -77,6 +81,9 @@ def get_full_dataset():
   return pd.DataFrame(acc)
 
 
-ids = get_full_dataset()["appid"]
+ids = get_full_dataset()["appid"].head(100)
 
-asyncio.run(fetch_all_pub_steam_sources(ids))
+data_tuple = asyncio.run(fetch_all_pub_steam_sources(ids))
+pd.DataFrame(data_tuple[0]).to_json("first_data.csv")
+pd.DataFrame(data_tuple[1]).to_json("second_data.csv")
+pd.DataFrame(data_tuple[2]).to_json("third_data.csv")
