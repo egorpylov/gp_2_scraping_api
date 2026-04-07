@@ -91,7 +91,12 @@ def get_full_dataset():
   return pd.DataFrame(acc)
 
 
-ids = get_full_dataset()["appid"]
+ids = get_full_dataset()
+
+with open("game_ids_names.json", "w") as f:
+  ids.to_json(f)
+
+'''
 
 data_tuple = asyncio.run(fetch_all_pub_steam_sources(ids, (
   config.app_details_url,
@@ -108,3 +113,5 @@ with open("reviews_data2.json", "w") as f:
 
 with open("current_online_data2.json", "w") as f:
     json.dump(data_tuple[2], f)
+
+'''
