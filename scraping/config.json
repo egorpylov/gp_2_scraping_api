@@ -1,0 +1,18 @@
+{
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "file": ".log/steamspy_{time}.log",
+    "rotation": "50 MB",
+    "retention": "7 days"
+  },
+  "scraping": {
+    "years": [2019, 2020, 2021, 2022, 2023, 2024],
+    "base_url": "https://steamspy.com/year/",
+    "delay_min": 2.0,
+    "delay_max": 5.0,
+    "headless": true,
+    "page_load_timeout": 60,
+    "output_file": "data/steamspy_data.csv"
+  }
+}
