@@ -90,13 +90,12 @@ def get_full_dataset():
 
   return pd.DataFrame(acc)
 
-
+'''
 ids = get_full_dataset()
 
 with open("game_ids_names.json", "w") as f:
   ids.to_json(f)
 
-'''
 
 data_tuple = asyncio.run(fetch_all_pub_steam_sources(ids, (
   config.app_details_url,
@@ -113,5 +112,22 @@ with open("reviews_data2.json", "w") as f:
 
 with open("current_online_data2.json", "w") as f:
     json.dump(data_tuple[2], f)
+
+
+@logger.catch
+async def get_all_private_steam_once(urls, params):
+  clients = list(map(lambda p: httpx.AsyncClient(proxy=p, timeout=20), config.PROXIES[:len(urls) + 1]))
+  tasks = [client.get(url, params=param) for client, url, param in zip(clients, urls, params)]
+
+  data = await asyncio.gather(*tasks)
+  return data
+
+data = asyncio.run(get_all_private_steam_once(config.private_urls_list.keys(), [{"key": os.environ["API_KEY"]}] * len(config.private_urls_list)))
+
+for dataset, name in zip(data, config.private_urls_list.values()):
+  with open(f"data/{name}.json", "w") as f:
+    json.dump(dataset.json()["response"], f)
+
+print(data)
 
 '''
