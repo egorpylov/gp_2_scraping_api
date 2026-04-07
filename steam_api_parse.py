@@ -6,7 +6,7 @@ from copy import deepcopy
 import pandas as pd
 import os
 from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 import config
 import httpx
 import asyncio
@@ -21,12 +21,12 @@ def get_next_dataset(params):
   return requests.get(config.all_games_url, params).json()["response"]
 
 
-@retry(wait=wait_exponential(max=60, min=5), stop=stop_after_attempt(3))
+@retry(wait=wait_exponential(max=60, min=5), stop=stop_after_attempt(3), retry=retry_if_exception_type(httpx.ReadTimeout))
 async def get_with_retry(client, url):
   return await client.get(url)
 
 @logger.catch
-async def fetch_steam_pub_api(client, urls, ids):
+async def fetch_steam_api(client, urls, ids):
   data = dict()  
   await asyncio.sleep(random.uniform(0, 2))
 
@@ -44,9 +44,9 @@ async def fetch_steam_pub_api(client, urls, ids):
 
 # urls is a list of url lists generated for each client
 @logger.catch
-async def fetch_pub_steam_full(clients, urls, ids, list_params=None):
+async def fetch_steam_full(clients, urls, ids, list_params=None):
 
-  tasks = [fetch_steam_pub_api(clients[i], urls[i], ids[i]) for i in range(len(clients))] 
+  tasks = [fetch_steam_api(clients[i], urls[i], ids[i]) for i in range(len(urls))] 
   
   data = await asyncio.gather(*tasks)
 
@@ -64,7 +64,7 @@ async def fetch_all_pub_steam_sources(appids, urls):
   for url in urls:
     
     url_list = list(map(lambda y: list(map(lambda x: url.format(appid=x), y)), splitted_ids))
-    current_data = await fetch_pub_steam_full(clients, url_list, splitted_ids)
+    current_data = await fetch_steam_full(clients, url_list, splitted_ids)
     data.append(current_data)
     logger.success(f"Data for url: {url} successfully fetched")
 
@@ -131,3 +131,40 @@ for dataset, name in zip(data, config.private_urls_list.values()):
 print(data)
 
 '''
+
+from datetime import datetime
+
+@logger.catch
+async def get_all_top_games_timed():
+
+  months = []
+  years = []
+  
+  for year in range(2003, 2027):
+    years.append(datetime(year, 1, 1).timestamp())
+    for month in range(1, 13):
+      months.append(datetime(year, month, 1).timestamp())
+
+  month_urls = [config.month_top_url.format(key=os.environ["API_KEY"], time=month) for month in months]
+  year_urls = [config.year_top_url.format(key=os.environ["API_KEY"], time=year) for year in years]
+  
+  splitted_month_urls = [i.tolist() for i in np.array_split(month_urls, min(len(config.PROXIES), len(month_urls)) )]
+  splitted_year_urls = [i.tolist() for i in np.array_split(year_urls, min(len(config.PROXIES), len(year_urls)))]
+
+  month_ids = [i.astype(int).tolist() for i in np.array_split(range(len(month_urls)), len(config.PROXIES))]
+  year_ids = [i.astype(int).tolist() for i in np.array_split(range(len(year_urls)), len(config.PROXIES))]
+  
+  clients = list(map(lambda p: httpx.AsyncClient(proxy=p, timeout=20), config.PROXIES))
+  month_data = await fetch_steam_full(clients, splitted_month_urls, month_ids)
+  logger.success("Top month game data fetched successfully fetched")
+  year_data = await fetch_steam_full(clients, splitted_year_urls, year_ids)
+  logger.success("Top year game data fetched successfully fetched")
+
+  return (month_data, year_data)
+
+time_data_tuple = asyncio.run(get_all_top_games_timed())
+with open("data/month_top_games_data.json", "w") as f:
+    json.dump(time_data_tuple[0], f)
+
+with open("data/year_top_games_data.json", "w") as f:
+    json.dump(time_data_tuple[1], f)
