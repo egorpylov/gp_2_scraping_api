@@ -5,3 +5,4 @@ loguru
 httpx
 requests
 more-itertools
+tenacity
