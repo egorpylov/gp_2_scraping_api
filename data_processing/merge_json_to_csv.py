@@ -21,6 +21,27 @@ def top(data, pre):
                         if pre=='year':
                             r[aid]['year_top_type'] = it.get('type')
     return r
+def safe_join(x):
+    if not x:
+        return ''
+    if type(x) == list:
+        r = []
+        for i in x:
+            if type(i) == dict:
+                if 'description' in i:
+                    r.append(str(i['description']))
+                elif 'name' in i:
+                    r.append(str(i['name']))
+                elif 'id' in i:
+                    r.append(str(i['id']))
+                else:
+                    r.append(str(i))
+            else:
+                r.append(str(i))
+        return ' | '.join(r)
+    if type(x) == dict:
+        return json.dumps(x, ensure_ascii=False)
+    return str(x)
 
 d1 = json.load(open('details_data2.json'))
 d2 = json.load(open('current_online_data2.json'))
@@ -69,3 +90,50 @@ ids = sorted(all_ids, key=lambda x: int(x) if x.isdigit() else 0)
 f = open('combined_data.csv', 'w')
 w = csv.writer(f) # https://docs.python.org/3/library/csv.html
 w.writerow(cols) 
+for appid in ids:
+    de = details.get(appid, {})
+    d = {}
+    if de:
+        try: d = list(de.values())[0].get('data', {})
+        except: pass
+    price = d.get('price_overview', {})
+    meta = d.get('metacritic', {})
+    rv = reviews.get(appid, {})
+    mt = m.get(appid, {})
+    yt = y.get(appid, {})
+    plats = [k for k, v in (d.get('platforms') or {}).items() if v]
+    w.writerow([
+        appid,
+        d.get('name') or names.get(appid, ''),
+        d.get('type', ''),
+        d.get('required_age', ''),
+        d.get('is_free', ''),
+        (d.get('release_date') or {}).get('date', ''),
+        meta.get('score', ''),
+        meta.get('url', ''),
+        safe_join(d.get('developers')),
+        safe_join(d.get('publishers')),
+        safe_join(d.get('categories')),
+        safe_join(d.get('genres')),
+        safe_join(plats),
+        d.get('header_image', ''),
+        d.get('website', ''),
+        d.get('short_description', ''),
+        price.get('currency', ''),
+        price.get('initial', ''),
+        price.get('final', ''),
+        price.get('discount_percent', ''),
+        online.get(appid, ''),
+        rv.get('review_score', ''),
+        rv.get('review_score_desc', ''),
+        rv.get('total_positive', ''),
+        rv.get('total_negative', ''),
+        rv.get('total_reviews', ''),
+        mt.get('month_top_rank', ''),
+        mt.get('month_top_release_timestamp', ''),
+        yt.get('year_top_rank', ''),
+        yt.get('year_top_release_timestamp', ''),
+        yt.get('year_top_type', '')
+    ])
+f.close()
+print('Done')
