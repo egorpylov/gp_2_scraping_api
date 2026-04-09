@@ -113,7 +113,7 @@ with open("reviews_data2.json", "w") as f:
 with open("current_online_data2.json", "w") as f:
     json.dump(data_tuple[2], f)
 
-
+'''
 @logger.catch
 async def get_all_private_steam_once(urls, params):
   clients = list(map(lambda p: httpx.AsyncClient(proxy=p, timeout=20), config.PROXIES[:len(urls) + 1]))
@@ -122,11 +122,14 @@ async def get_all_private_steam_once(urls, params):
   data = await asyncio.gather(*tasks)
   return data
 
-data = asyncio.run(get_all_private_steam_once(config.private_urls_list.keys(), [{"key": os.environ["API_KEY"]}] * len(config.private_urls_list)))
+data = asyncio.run(get_all_private_steam_once(
+    [i["url"] for i in config.private_urls_list.values()],
+    [i["params"] for i in config.private_urls_list.values()]
+))
 
-for dataset, name in zip(data, config.private_urls_list.values()):
-  with open(f"data/{name}.json", "w") as f:
-    json.dump(dataset.json()["response"], f)
+for dataset, name in zip(data, config.private_urls_list.keys()):
+    with open(f"data/{name}.json", "w") as f:
+        json.dump(dataset.json()["response"], f)
 
 print(data)
 
@@ -168,3 +171,5 @@ with open("data/month_top_games_data.json", "w") as f:
 
 with open("data/year_top_games_data.json", "w") as f:
     json.dump(time_data_tuple[1], f)
+
+'''
