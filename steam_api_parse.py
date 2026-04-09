@@ -151,8 +151,8 @@ async def get_all_top_games_timed():
   splitted_month_urls = [i.tolist() for i in np.array_split(month_urls, min(len(config.PROXIES), len(month_urls)) )]
   splitted_year_urls = [i.tolist() for i in np.array_split(year_urls, min(len(config.PROXIES), len(year_urls)))]
 
-  month_ids = [i.astype(int).tolist() for i in np.array_split(range(len(month_urls)), len(config.PROXIES))]
-  year_ids = [i.astype(int).tolist() for i in np.array_split(range(len(year_urls)), len(config.PROXIES))]
+  month_ids = [i.astype(int).tolist() for i in np.array_split([int(month) for month in months], len(config.PROXIES))]
+  year_ids = [i.astype(int).tolist() for i in np.array_split([int(year) for year in months], len(config.PROXIES))]
   
   clients = list(map(lambda p: httpx.AsyncClient(proxy=p, timeout=20), config.PROXIES))
   month_data = await fetch_steam_full(clients, splitted_month_urls, month_ids)
