@@ -1,16 +1,13 @@
 import random
-
 import requests
 import json
 from copy import deepcopy
 import pandas as pd
-import os
 from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 import config
 import httpx
 import asyncio
-from more_itertools import divide
 import numpy as np
 
 logger.add(".log/{time}.log")
@@ -74,13 +71,13 @@ async def fetch_all_pub_steam_sources(appids, urls):
 
 
 @logger.catch
-def get_full_dataset():
+def get_full_appids():
   
   last = get_next_dataset(config.data_private_api_params)
   acc = deepcopy(last["apps"])
 
   while "have_more_results" in last.keys():
-    logger.success(f"Steam API dtaset successfully fetched last game id: {last['last_appid']}")
+    logger.success(f"Steam API dataset successfully fetched last game id: {last['last_appid']}")
 
     last = get_next_dataset({**config.data_private_api_params, "last_appid": last["last_appid"]})
 
@@ -91,7 +88,7 @@ def get_full_dataset():
   return pd.DataFrame(acc)
 
 '''
-ids = get_full_dataset()
+ids = get_full_appids()
 
 with open("game_ids_names.json", "w") as f:
   ids.to_json(f)
@@ -131,7 +128,6 @@ for dataset, name in zip(data, config.private_urls_list.keys()):
     with open(f"data/{name}.json", "w") as f:
         json.dump(dataset.json()["response"], f)
 
-print(data)
 
 '''
 
@@ -142,6 +138,7 @@ async def get_all_top_games_timed():
 
   months = []
   years = []
+
   
   for year in range(2003, 2027):
     years.append(datetime(year, 1, 1).timestamp())
