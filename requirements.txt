@@ -6,3 +6,4 @@ httpx
 requests
 more-itertools
 tenacity
+selenium
